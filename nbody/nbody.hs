@@ -30,6 +30,7 @@ type Float3D  = (Float, Float, Float)
 type PVector  = R.Array R.U R.DIM1 Float3D
 type PVectorD = R.Array R.D R.DIM1 Float3D
 
+{-# INLINE gForce #-}
 gForce :: Float
 gForce = 9.8
 
@@ -47,7 +48,7 @@ compute vecList myvector = next
 
 {-# INLINE multTriple #-}
 multTriple :: Float -> Float3D -> Float3D
-multTriple c ( x,y,z ) = ( c*x,c*y,c*z )
+multTriple c (x, y, z) = ( c*x,c*y,c*z )
 
 {-# INLINE sumTriples #-}
 sumTriples :: PVectorD -> Float3D
