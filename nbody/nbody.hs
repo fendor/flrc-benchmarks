@@ -12,19 +12,20 @@
 -- more details.
 --
 -- You should have received a copy of the GNU Lesser General Public License along with
--- this program; if not, write to the Free Software Foundation, Inc., 
+-- this program; if not, write to the Free Software Foundation, Inc.,
 -- 51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
 
 -- Ported from CnC/C++ program by Ryan Newton
 -- Modified for use with Repa and HRC by Leaf Petersen (2012)
 -}
 
-{-# LANGUAGE BangPatterns, FlexibleContexts #-}
+{-# LANGUAGE BangPatterns     #-}
+{-# LANGUAGE FlexibleContexts #-}
 
-import Harness  
-import qualified Data.List as List
 import qualified Data.Array.Repa as R
-import qualified Text.Printf as T
+import qualified Data.List       as List
+import           Harness
+import qualified Text.Printf     as T
 
 type Float3D  = (Float, Float, Float)
 type PVector  = R.Array R.U R.DIM1 Float3D
@@ -39,12 +40,12 @@ genVector :: (R.Shape sh, Fractional t) => sh -> sh -> (t, t, t)
 genVector sh tag = (tag' * 1.0, tag' * 0.2, tag' * 30.0)
    where tag' = fromIntegral (R.toIndex sh tag)
 
--- This step computes the accelerations of the bodies.       
+-- This step computes the accelerations of the bodies.
 compute :: PVector -> Float3D -> Float3D
 compute vecList myvector = next
        where
              next = accel myvector vecList
-            
+
 
 {-# INLINE multTriple #-}
 multTriple :: Float -> Float3D -> Float3D
@@ -54,23 +55,23 @@ multTriple c (x, y, z) = ( c*x,c*y,c*z )
 sumTriples :: PVectorD -> Float3D
 sumTriples = R.foldAllS (\(!x,!y,!z) (!x',!y',!z') -> (x+x',y+y',z+z')) (0,0,0)
 
-accel :: Float3D -> PVector -> Float3D 
+accel :: Float3D -> PVector -> Float3D
 accel vector vecList = multTriple gForce . sumTriples $ R.map (pairWiseAccel vector) vecList
 
 pairWiseAccel :: Float3D -> Float3D -> Float3D
-pairWiseAccel (x,y,z) (x',y',z') = 
-  let 
+pairWiseAccel (x,y,z) (x',y',z') =
+  let
       dx = x'-x
       dy = y'-y
       dz = z'-z
       eps = 0.005
       distanceSq = dx*dx + dy*dy + dz*dz + eps
       factor = 1/sqrt(distanceSq * distanceSq * distanceSq)
-  in 
+  in
       multTriple factor (dx, dy, dz)
 
 advance :: Int -> PVector -> PVector
-advance n accels = if n == 0 then accels 
+advance n accels = if n == 0 then accels
                    else let step = R.computeUnboxedS (R.map (compute accels) accels)
                         in advance (n-1) step
 
@@ -78,20 +79,23 @@ run :: Int -> Int -> PVector
 run n iterations = advance iterations (R.computeUnboxedS (R.fromFunction d $ genVector d))
   where d = R.ix1 n
 
+buildIt :: Monad m => [String] -> m (m PVector, Maybe (PVector -> IO ()))
 buildIt args = return (runIt, showIt)
   where
-    (s, i) = case args of 
+    (numOfPlanets, iterations) = case args of
                []     -> (3::Int, 10::Int)
                [s]    -> (read s, 10::Int)
                [s, i] -> (read s, read i)
                _      -> error "nbody.buildit"
-    
+
+    runIt :: Monad m => m PVector
     runIt = do
-      let acc = run s i
-      acc `R.deepSeqArray` (return acc)
-    
-    showIt = 
-      let f = \r -> 
+      let acc = run numOfPlanets iterations
+      acc `R.deepSeqArray` return acc
+
+    showIt :: Maybe (PVector -> IO ())
+    showIt =
+      let f = \r ->
                   let s = List.concat ([ T.printf "(%.3g, %.3g %.3g)\t" x y z | (x, y, z) <- (R.toList r) ])
                   in writeFile "nbody.res" s
       in Just f
