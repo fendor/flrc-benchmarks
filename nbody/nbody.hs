@@ -24,15 +24,16 @@
 
 import qualified Data.Array.Repa as R
 import qualified Data.List       as List
+import           Debug.Trace     (trace)
 import           Harness
 import qualified Text.Printf     as T
 
-type Float3D  = (Float, Float, Float)
+type Float3D  = (Double, Double, Double)
 type PVector  = R.Array R.U R.DIM1 Float3D
 type PVectorD = R.Array R.D R.DIM1 Float3D
 
 {-# INLINE gForce #-}
-gForce :: Float
+gForce :: Double
 gForce = 9.8
 
 -- This step generates the bodies in the system.
@@ -40,20 +41,17 @@ genVector :: (R.Shape sh, Fractional t) => sh -> sh -> (t, t, t)
 genVector sh tag = (tag' * 1.0, tag' * 0.2, tag' * 30.0)
    where tag' = fromIntegral (R.toIndex sh tag)
 
--- This step computes the accelerations of the bodies.
-compute :: PVector -> Float3D -> Float3D
-compute vecList myvector = next
-       where
-             next = accel myvector vecList
-
-
 {-# INLINE multTriple #-}
-multTriple :: Float -> Float3D -> Float3D
+multTriple :: Double -> Float3D -> Float3D
 multTriple c (x, y, z) = ( c*x,c*y,c*z )
 
 {-# INLINE sumTriples #-}
 sumTriples :: PVectorD -> Float3D
 sumTriples = R.foldAllS (\(!x,!y,!z) (!x',!y',!z') -> (x+x',y+y',z+z')) (0,0,0)
+
+run :: Int -> Int -> PVector
+run n iterations = advance' iterations (R.computeUnboxedS (R.fromFunction d $ genVector d))
+  where d = R.ix1 n
 
 accel :: Float3D -> PVector -> Float3D
 accel vector vecList = multTriple gForce . sumTriples $ R.map (pairWiseAccel vector) vecList
@@ -72,12 +70,19 @@ pairWiseAccel (x,y,z) (x',y',z') =
 
 advance :: Int -> PVector -> PVector
 advance n accels = if n == 0 then accels
-                   else let step = R.computeUnboxedS (R.map (compute accels) accels)
-                        in advance (n-1) step
+                   else advance (n-1) $ step accels
 
-run :: Int -> Int -> PVector
-run n iterations = advance iterations (R.computeUnboxedS (R.fromFunction d $ genVector d))
-  where d = R.ix1 n
+advance' :: Int -> PVector -> PVector
+advance' n accels = List.iterate step accels !! (n - 1)
+
+advance'' :: Int -> PVector -> PVector
+advance'' n accels = List.foldl' (\val _ -> step val) accels [1..n]
+
+step :: PVector -> PVector
+step accels = R.computeUnboxedS $ R.map (`accel` accels) accels
+
+
+
 
 buildIt :: Monad m => [String] -> m (m PVector, Maybe (PVector -> IO ()))
 buildIt args = return (runIt, showIt)
@@ -96,9 +101,12 @@ buildIt args = return (runIt, showIt)
     showIt :: Maybe (PVector -> IO ())
     showIt =
       let f = \r ->
-                  let s = List.concat ([ T.printf "(%.3g, %.3g %.3g)\t" x y z | (x, y, z) <- (R.toList r) ])
+                  let s = List.concat ([ T.printf "(%g, %g %g)\n" x y z | (x, y, z) <- (R.toList r) ])
                   in writeFile "nbody.res" s
       in Just f
 
 main :: IO ()
 main = runBenchmark buildIt
+
+prettyPrint :: PVector -> IO ()
+prettyPrint = mapM_ print . R.toList
