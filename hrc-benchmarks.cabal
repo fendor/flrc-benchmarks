@@ -70,7 +70,6 @@ executable nbody
                        -O2 
                        -optc-O2 
                        -msse2 
-                       -fforce-recomp 
                        -funfolding-use-threshold1000  
                        -funfolding-keeness-factor1000 
                        -threaded
@@ -84,8 +83,7 @@ executable nbody-llvm
                        -optlo-O2 
                        -optlc-O2 
                        -msse2 
-                       -O2 
-                       -fforce-recomp 
+                       -O2  
                        -funfolding-use-threshold1000  
                        -funfolding-keeness-factor1000 
                        -threaded

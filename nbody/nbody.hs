@@ -73,16 +73,13 @@ advance n accels = if n == 0 then accels
                    else advance (n-1) $ step accels
 
 advance' :: Int -> PVector -> PVector
-advance' n accels = List.iterate step accels !! (n - 1)
+advance' n accels = List.iterate step accels !! n
 
 advance'' :: Int -> PVector -> PVector
 advance'' n accels = List.foldl' (\val _ -> step val) accels [1..n]
 
 step :: PVector -> PVector
 step accels = R.computeUnboxedS $ R.map (`accel` accels) accels
-
-
-
 
 buildIt :: Monad m => [String] -> m (m PVector, Maybe (PVector -> IO ()))
 buildIt args = return (runIt, showIt)
@@ -101,7 +98,7 @@ buildIt args = return (runIt, showIt)
     showIt :: Maybe (PVector -> IO ())
     showIt =
       let f = \r ->
-                  let s = List.concat ([ T.printf "(%g, %g %g)\n" x y z | (x, y, z) <- (R.toList r) ])
+                  let s = List.concat ([ T.printf "(%g, %g, %g)\n" x y z | (x, y, z) <- (R.toList r) ])
                   in writeFile "nbody.res" s
       in Just f
 
