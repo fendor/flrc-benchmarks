@@ -49,9 +49,12 @@ multTriple c (x, y, z) = ( c*x,c*y,c*z )
 sumTriples :: PVectorD -> Float3D
 sumTriples = R.foldAllS (\(!x,!y,!z) (!x',!y',!z') -> (x+x',y+y',z+z')) (0,0,0)
 
-run :: Int -> Int -> PVector
-run n iterations = advance' iterations (R.computeUnboxedS (R.fromFunction d $ genVector d))
-  where d = R.ix1 n
+run :: Monad m => Int -> Int -> m PVector
+run n iterations = do
+    vals <- R.computeUnboxedP (R.fromFunction d $ genVector d)
+    advance iterations vals
+  where
+    d = R.ix1 n
 
 accel :: Float3D -> PVector -> Float3D
 accel vector vecList = multTriple gForce . sumTriples $ R.map (pairWiseAccel vector) vecList
@@ -68,18 +71,25 @@ pairWiseAccel (x,y,z) (x',y',z') =
   in
       multTriple factor (dx, dy, dz)
 
-advance :: Int -> PVector -> PVector
-advance n accels = if n == 0 then accels
-                   else advance (n-1) $ step accels
+advance :: Monad m => Int -> PVector -> m PVector
+advance n accels =
+    if n <= 0 then
+      return accels
+    else do
+      next <- step accels
+      advance (n-1) next
 
+{--
 advance' :: Int -> PVector -> PVector
 advance' n accels = List.iterate step accels !! n
-
+--}
+{--
 advance'' :: Int -> PVector -> PVector
 advance'' n accels = List.foldl' (\val _ -> step val) accels [1..n]
+--}
 
-step :: PVector -> PVector
-step accels = R.computeUnboxedS $ R.map (`accel` accels) accels
+step :: Monad m => PVector -> m PVector
+step accels = R.computeUnboxedP $ R.map (`accel` accels) accels
 
 buildIt :: Monad m => [String] -> m (m PVector, Maybe (PVector -> IO ()))
 buildIt args = return (runIt, showIt)
@@ -92,13 +102,13 @@ buildIt args = return (runIt, showIt)
 
     runIt :: Monad m => m PVector
     runIt = do
-      let acc = run numOfPlanets iterations
+      acc <- run numOfPlanets iterations
       acc `R.deepSeqArray` return acc
 
     showIt :: Maybe (PVector -> IO ())
     showIt =
       let f = \r ->
-                  let s = List.concat ([ T.printf "(%g, %g, %g)\n" x y z | (x, y, z) <- (R.toList r) ])
+                  let s = List.concat ([ T.printf "(%f, %f, %f)\n" x y z | (x, y, z) <- (R.toList r) ])
                   in writeFile "nbody.res" s
       in Just f
 

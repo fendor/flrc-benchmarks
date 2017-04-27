@@ -81,9 +81,10 @@ executable nbody-llvm
   hs-source-dirs:      nbody
   ghc-options:         -fllvm 
                        -optlo-O2 
-                       -optlc-O2 
+                       -optlc-O2
+                       -opta-O2 
                        -msse2 
-                       -O2  
+                       -O3
                        -funfolding-use-threshold1000  
                        -funfolding-keeness-factor1000 
                        -threaded
