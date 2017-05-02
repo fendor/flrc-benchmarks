@@ -1,5 +1,7 @@
 !.gitignore
-*.res # result files
+*.res
+
+
 # Created by https://www.gitignore.io/api/c,cmake,haskell
 
 ### C ###
@@ -90,4 +92,3 @@ cabal.project.local
 
 # End of https://www.gitignore.io/api/c,cmake,haskell
 
-0
