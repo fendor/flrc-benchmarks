@@ -31,7 +31,28 @@ executable 2d-convolution
   main-is:             2d-convolution.hs
   build-depends:       base, repa, hrc-benchmarks
   hs-source-dirs:      2d-convolution
-  ghc-options:         -fno-liberate-case -funfolding-use-threshold1000  -funfolding-keeness-factor1000 -threaded
+  ghc-options:         -Wall 
+                       -fno-liberate-case 
+                       -funfolding-use-threshold1000  
+                       -funfolding-keeness-factor1000 
+                       -threaded
+  default-language:    Haskell2010
+
+executable 2d-convolution-llvm
+  main-is:             2d-convolution.hs
+  build-depends:       base, repa, hrc-benchmarks
+  hs-source-dirs:      2d-convolution
+  ghc-options:         -Wall 
+                       -fllvm
+                       -optlo-O2 
+                       -optlc-O2
+                       -opta-O2 
+                       -msse2 
+                       -O3
+                       -fno-liberate-case 
+                       -funfolding-use-threshold1000  
+                       -funfolding-keeness-factor1000 
+                       -threaded
   default-language:    Haskell2010
 
 executable 7pt-stencil
@@ -66,7 +87,7 @@ executable nbody
   main-is:             nbody.hs
   build-depends:       base, repa, deepseq, hrc-benchmarks
   hs-source-dirs:      nbody
-  ghc-options:         
+  ghc-options:         -Wall
                        -O2 
                        -optc-O2 
                        -msse2 
@@ -79,7 +100,8 @@ executable nbody-llvm
   main-is:             nbody.hs
   build-depends:       base, repa, deepseq, hrc-benchmarks
   hs-source-dirs:      nbody
-  ghc-options:         -fllvm 
+  ghc-options:         -Wall
+                       -fllvm 
                        -optlo-O2 
                        -optlc-O2
                        -opta-O2 

@@ -24,7 +24,6 @@
 
 import qualified Data.Array.Repa as R
 import qualified Data.List       as List
-import           Debug.Trace     (trace)
 import           Harness
 import qualified Text.Printf     as T
 
@@ -107,9 +106,9 @@ buildIt args = return (runIt, showIt)
 
     showIt :: Maybe (PVector -> IO ())
     showIt =
-      let f = \r ->
-                  let s = List.concat ([ T.printf "(%f, %f, %f)\n" x y z | (x, y, z) <- (R.toList r) ])
-                  in writeFile "nbody.res" s
+      let f r =
+            let s = List.concat [ T.printf "(%f, %f, %f)\n" x y z | (x, y, z) <- R.toList r ]
+            in writeFile "nbody.res" s
       in Just f
 
 main :: IO ()
