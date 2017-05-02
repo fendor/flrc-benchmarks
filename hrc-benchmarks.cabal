@@ -31,7 +31,12 @@ executable 2d-convolution
   main-is:             2d-convolution.hs
   build-depends:       base, repa, hrc-benchmarks
   hs-source-dirs:      2d-convolution
-  ghc-options:         -Wall 
+  ghc-options:         -Wall
+                       -optlo-O2 
+                       -optlc-O2
+                       -opta-O2 
+                       -msse2 
+                       -O3
                        -fno-liberate-case 
                        -funfolding-use-threshold1000  
                        -funfolding-keeness-factor1000 
