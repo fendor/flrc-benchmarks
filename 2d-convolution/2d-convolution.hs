@@ -21,6 +21,14 @@ import           Data.Array.Repa.Stencil      as R (Boundary (BoundClamp))
 import           Data.Array.Repa.Stencil.Dim2 as RepaStencil
 import           Harness
 
+type Iterations = Int
+type Width = Int
+type Height = Int
+
+data Args = 
+    FromFile FilePath Iterations
+    | Generate Height Width Iterations
+
 type CImage = Array U DIM2 Float
 
 advance :: Int -> CImage -> IO CImage
@@ -29,33 +37,54 @@ advance !n image | n <= 0    = return image
 
 compute :: CImage -> IO CImage
 compute image = Repa.computeP $ forStencil2 BoundClamp image
-                     [stencil2|   2 -2  2 -2  2
-                                 -2  2 -2  2 -2
-                                  2 -2 -1 -2  2
-                                 -2  2 -2  2 -2
-                                  2 -2  2 -2  2 |]
+                     $ RepaStencil.makeStencil2 
+                        3 
+                        3
+                        (\sh -> case sh of 
+                            (Z :. -1 :. 0) -> Just 0.25
+                            (Z :. 0 :. -1) -> Just 0.25
+                            (Z :. 1 :. 0) -> Just 0.25
+                            (Z :. 0 :. 1) -> Just 0.25
+                            _ -> Nothing
+                        )
 
-buildIt :: Monad m => [String] -> m (IO CImage, Maybe (CImage -> IO ()))
-buildIt args = image `seq` return (runIt, showIt)
+buildIt :: [String] -> IO (IO CImage, Maybe (CImage -> IO ()))
+buildIt args = image pArgs >>= \(img, iter) -> img `seq` return (runIt iter img, showIt)
   where
-    (iterations, ilength, iwidth) = case args of
-             []                  -> (4000, 1024, 1024)
-             [iterinput]         -> (read iterinput, 1024, 1024)
-             [iterinput, li]     -> (read iterinput, read li, 1024)
-             [iterinput, li, wi] -> (read iterinput, read li, read wi)
+    pArgs = case args of
+             []                  -> Generate 1024 1024 4000
+             [iterinput]         -> Generate 1024 1024 (read iterinput)
+             [li, wi, iterinput] -> Generate (read li) (read wi) (read iterinput)
+             [fp, iterinput] -> FromFile fp (read iterinput)
              _                   -> error "2d-convolution.builtIt"
 
-    runIt :: IO CImage
-    runIt = advance iterations image
+    runIt :: Iterations -> CImage -> IO CImage
+    runIt = advance 
 
-    shape :: DIM2
-    shape = Z :. ilength :. iwidth
+    image :: Args -> IO (CImage, Iterations)
+    image arg = case arg of 
+        FromFile filename iter  -> 
+            flip (,) iter `fmap` parseMatrixFromFile filename
 
-    image :: CImage
-    image = Repa.computeS . fromFunction shape $ const 1
+        Generate height width iters -> do
+            let shape = (Z :. height :. width) :: DIM2
+            return ((fromListUnboxed shape $ replicate (height * width) 1), iters)
 
     showIt :: Maybe (CImage -> IO ())
-    showIt = Just (writeFile "2d-convolution.res" . show . sumAllS)    -- put checksum output in convolution.res
+    showIt = Just (writeFile "2d-convolution.res" . show . sumAllS )    -- put checksum output in convolution.res
 
 main :: IO ()
 main = runBenchmark buildIt
+
+
+parseMatrixFromFile :: FilePath -> IO CImage
+parseMatrixFromFile filename = do
+    content <- lines `fmap` readFile filename
+    case content of 
+      (sizes:values) -> do
+          let [width, height] = (Prelude.map read . words) sizes
+          let shape = Z :. height :. width :: DIM2
+          return (fromListUnboxed shape $ concatMap (Prelude.map read . words) values)
+
+      
+      _ -> error "Couldn't parse file invalid number of lines "
