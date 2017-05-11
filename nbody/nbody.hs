@@ -42,7 +42,7 @@ genVector sh tag = (tag' * 1.0, tag' * 0.2, tag' * 30.0)
 
 {-# INLINE multTriple #-}
 multTriple :: Double -> Float3D -> Float3D
-multTriple c (x, y, z) = ( c*x,c*y,c*z )
+multTriple c (!x, !y, !z) = ( c*x,c*y,c*z )
 
 {-# INLINE sumTriples #-}
 sumTriples :: PVectorD -> Float3D
@@ -59,7 +59,7 @@ accel :: Float3D -> PVector -> Float3D
 accel vector vecList = multTriple gForce . sumTriples $ R.map (pairWiseAccel vector) vecList
 
 pairWiseAccel :: Float3D -> Float3D -> Float3D
-pairWiseAccel (x,y,z) (x',y',z') =
+pairWiseAccel (!x,!y,!z) (!x',!y',!z') =
   let
       dx = x'-x
       dy = y'-y
@@ -97,7 +97,7 @@ buildIt args = return (runIt, showIt)
                []     -> (3::Int, 10::Int)
                [s]    -> (read s, 10::Int)
                [s, i] -> (read s, read i)
-               _      -> error "nbody.buildit"
+               _      -> error "nbody.buildIt"
 
     runIt :: Monad m => m PVector
     runIt = do
