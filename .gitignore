@@ -1,7 +1,8 @@
 !.gitignore
 *.res
 *.txt
-
+*~
+*.bak
 # Created by https://www.gitignore.io/api/c,cmake,haskell
 
 ### C ###

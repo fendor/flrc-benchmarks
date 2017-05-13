@@ -16,23 +16,27 @@
 
 module Harness (runBenchmark) where
 
+import           Control.Monad      (forM_)
 import           Data.Time
 import           System.Environment
 
 {- # INLINE runBenchmark # -}
-runBenchmark :: ([String] -> IO (IO a, Maybe (a -> IO ()))) -> IO ()
-runBenchmark buildIt = do
+runBenchmark :: Int -> ([String] -> IO (IO a, Maybe (a -> Integer -> IO ()))) -> IO ()
+runBenchmark n buildIt = do
     args <- getArgs
     bench <- buildIt args
 
-    t0 <- bench `seq` getCurrentTime
-    putStrLn "Starting kernel"
-    let (doIt, showIt) = bench
-    b <- doIt
-    t1 <- b `seq` getCurrentTime
-    let td = diffUTCTime t1 t0
-    putStrLn ("Kernel time: " ++ show td)
+    forM_ [1..n] $ \_ -> do
+        t0 <- bench `seq` getCurrentTime
+        putStrLn "Starting kernel"
+        let (doIt, showIt) = bench
+        b <- doIt
+        t1 <- b `seq` getCurrentTime
+        let td = diffUTCTime t1 t0
+        putStrLn ("Kernel time: " ++ show td)
 
-    case showIt of
-        Just f  -> f b
-        Nothing -> return ()
+        case showIt of
+            Just f  -> f b ((diffTimeToPicoseconds . fromRational $ toRational td) `div` 1000000)
+            Nothing -> return ()
+
+    return ()
