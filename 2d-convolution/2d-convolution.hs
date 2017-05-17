@@ -16,10 +16,12 @@
 {-# LANGUAGE BangPatterns          #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE QuasiQuotes           #-}
+
 import           Data.Array.Repa              as Repa
 import           Data.Array.Repa.Stencil      as R (Boundary (BoundClamp))
 import           Data.Array.Repa.Stencil.Dim2 as RepaStencil
 import           Data.List                    (intercalate)
+import           Debug.Trace                  (trace)
 import           GHC.Conc                     (numCapabilities)
 import           Harness
 
@@ -31,7 +33,7 @@ data Args =
     FromFile FilePath Iterations
     | Generate Height Width Iterations
 
-type CImage = Array U DIM2 Float
+type CImage = Array U DIM2 Double
 
 advance :: Int -> CImage -> IO CImage
 advance !n image | n <= 0    = return image
@@ -43,10 +45,11 @@ compute image = Repa.computeP $ forStencil2 BoundClamp image
                         3
                         3
                         (\sh -> case sh of
-                            (Z :. -1 :. 0) -> Just 0.25
-                            (Z :. 0 :. -1) -> Just 0.25
-                            (Z :. 1 :. 0)  -> Just 0.25
-                            (Z :. 0 :. 1)  -> Just 0.25
+                            (Z :. 0 :. 0)  -> Just 0.5
+                            (Z :. 0 :. 1)  -> Just 0.125
+                            (Z :. 1 :. 0)  -> Just 0.125
+                            (Z :. -1 :. 0) -> Just 0.125
+                            (Z :. 0 :. -1) -> Just 0.125
                             _              -> Nothing
                         )
 
@@ -77,12 +80,13 @@ buildIt args = do
         showIt :: Iterations -> DIM2 -> Maybe (CImage -> Integer -> IO ())
         showIt iter (Z :. height :. width) =
             Just (\k td -> do
+                print $ sumAllS k
                 appendFile "2d-convolution.time.res" $ intercalate "," [show numCapabilities, show height, show width, show iter, show td] Prelude.++ "\n"
                 writeFile "2d-convolution.res" . show $ sumAllS k
             )       -- put checksum output in convolution.res
 
 main :: IO ()
-main = runBenchmark 10 buildIt
+main = runBenchmark 1 buildIt
 
 
 parseMatrixFromFile :: FilePath -> IO CImage
