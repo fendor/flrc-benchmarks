@@ -15,13 +15,10 @@
 -}
 {-# LANGUAGE BangPatterns          #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE QuasiQuotes           #-}
-
 import           Data.Array.Repa              as Repa
 import           Data.Array.Repa.Stencil      as R (Boundary (BoundClamp))
 import           Data.Array.Repa.Stencil.Dim2 as RepaStencil
 import           Data.List                    (intercalate)
-import           Debug.Trace                  (trace)
 import           GHC.Conc                     (numCapabilities)
 import           Harness
 
@@ -35,16 +32,17 @@ data Args =
 
 type CImage = Array U DIM2 Double
 
+
+
 advance :: Int -> CImage -> IO CImage
 advance !n image | n <= 0    = return image
-                 | otherwise = compute image >>= advance (n - 1)
+                 | otherwise = compute image >>= \img -> advance (n - 1) img
+
 
 compute :: CImage -> IO CImage
-compute image = Repa.computeP $ forStencil2 BoundClamp image
-                     $ RepaStencil.makeStencil2
-                        3
-                        3
-                        (\sh -> case sh of
+compute image = Repa.computeP $ forStencil2 BoundClamp image $
+                    makeStencil2 3 3
+                    (\sh -> case sh of
                             (Z :. 0 :. 0)  -> Just 0.5
                             (Z :. 0 :. 1)  -> Just 0.125
                             (Z :. 1 :. 0)  -> Just 0.125
@@ -52,6 +50,7 @@ compute image = Repa.computeP $ forStencil2 BoundClamp image
                             (Z :. 0 :. -1) -> Just 0.125
                             _              -> Nothing
                         )
+
 
 buildIt :: [String] -> IO (IO CImage, Maybe (CImage -> Integer -> IO ()))
 buildIt args = do
