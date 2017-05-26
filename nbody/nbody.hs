@@ -27,7 +27,9 @@ import           Data.List       (intercalate)
 import qualified Data.List       as List
 import           GHC.Conc        (numCapabilities)
 import           Harness
+import           NbodyOptParser
 import qualified Text.Printf     as T
+
 type Float3D  = (Double, Double, Double)
 type PVector  = R.Array R.U R.DIM1 Float3D
 type PVectorD = R.Array R.D R.DIM1 Float3D
@@ -91,32 +93,29 @@ advance'' n accels = List.foldl' (\val _ -> step val) accels [1..n]
 step :: Monad m => PVector -> m PVector
 step accels = R.computeUnboxedP $ R.map (`accel` accels) accels
 
-buildIt :: Monad m => [String] -> m (m PVector, Maybe (PVector -> Integer -> IO ()))
-buildIt args = return (runIt, showIt)
+buildIt :: Monad m => Options -> m (m PVector, Maybe (PVector -> Integer -> IO ()))
+buildIt options = return (runIt, showIt)
   where
-    (numOfPlanets, iterations) = case args of
-               []     -> (3::Int, 10::Int)
-               [s]    -> (read s, 10::Int)
-               [s, i] -> (read s, read i)
-               _      -> error "nbody.buildIt"
+    num = iterationsOpt options
+    planets = numberOfPlanetsOpt options
 
     runIt :: Monad m => m PVector
     runIt = do
-      acc <- run numOfPlanets iterations
+      acc <- run planets num
       acc `R.deepSeqArray` return acc
 
     showIt :: Maybe (PVector -> Integer -> IO ())
     showIt =
       let f r td =
             let s = List.concat [ T.printf "(%f, %f, %f)\n" x y z | (x, y, z) <- R.toList r ]
-                line = intercalate "," [show numCapabilities, show numOfPlanets, show iterations, show td]
+                line = intercalate "," [show numCapabilities, show planets, show num, show td]
             in do
               appendFile "nbody.time.res" (line ++ "\n")
               writeFile "nbody.res" s
       in Just f
 
 main :: IO ()
-main = runBenchmark 10 buildIt
+main = runBenchmark 10 . buildIt =<< execOptionParser
 
 prettyPrint :: PVector -> IO ()
 prettyPrint = mapM_ print . R.toList

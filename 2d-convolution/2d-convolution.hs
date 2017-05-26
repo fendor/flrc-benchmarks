@@ -15,77 +15,97 @@
 -}
 {-# LANGUAGE BangPatterns          #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-import           Data.Array.Repa              as Repa
-import           Data.Array.Repa.Stencil      as R (Boundary (BoundClamp))
-import           Data.Array.Repa.Stencil.Dim2 as RepaStencil
-import           Data.List                    (intercalate)
-import           GHC.Conc                     (numCapabilities)
+import           ConvolutionOptParser
+import           Data.Array.Repa                     ((:.) (..), Array, DIM2, U,
+                                                      Z (Z), computeP, extent,
+                                                      fromListUnboxed, sumAllS)
+import qualified Data.Array.Repa                     as Repa
+import           Data.Array.Repa.Algorithms.Convolve (convolveOutP, outClamp)
+import           Data.Array.Repa.Stencil             (Boundary (BoundClamp),
+                                                      Stencil)
+import           Data.Array.Repa.Stencil.Dim2        (forStencil2, makeStencil2)
+import           Data.List                           (intercalate)
+import           GHC.Conc                            (numCapabilities)
 import           Harness
-
-type Iterations = Int
-type Width = Int
-type Height = Int
-
-data Args =
-    FromFile FilePath Iterations
-    | Generate Height Width Iterations
 
 type CImage = Array U DIM2 Double
 
+newtype CStencil =
+    CStencil
+      { getStencil :: Array U DIM2 Double
+      }
 
 
-advance :: Int -> CImage -> IO CImage
-advance !n image | n <= 0    = return image
-                 | otherwise = compute image >>= \img -> advance (n - 1) img
-
+defaultStencil :: Stencil DIM2 Double
+defaultStencil =
+    makeStencil2
+        3
+        3
+        (\sh -> case sh of
+            (Z :. 0 :. 0)  -> Just 0.6
+            (Z :. 0 :. 1)  -> Just 0.125
+            (Z :. 1 :. 0)  -> Just 0.125
+            (Z :. -1 :. 0) -> Just 0.125
+            (Z :. 0 :. -1) -> Just 0.125
+            _              -> Nothing
+        )
 
 compute :: CImage -> IO CImage
-compute image = Repa.computeP $ forStencil2 BoundClamp image $
-                    makeStencil2 3 3
-                    (\sh -> case sh of
-                            (Z :. 0 :. 0)  -> Just 0.5
-                            (Z :. 0 :. 1)  -> Just 0.125
-                            (Z :. 1 :. 0)  -> Just 0.125
-                            (Z :. -1 :. 0) -> Just 0.125
-                            (Z :. 0 :. -1) -> Just 0.125
-                            _              -> Nothing
-                        )
+compute image =
+    computeP $ forStencil2 BoundClamp image defaultStencil
 
+compute' :: CImage -> CStencil -> IO CImage
+compute' img stencil =
+    convolveOutP outClamp (getStencil stencil) img
 
-buildIt :: [String] -> IO (IO CImage, Maybe (CImage -> Integer -> IO ()))
-buildIt args = do
-    (img, iter) <- image pArgs
-    img `seq` return (runIt iter img, showIt iter $ Repa.extent img)
+advance' :: Int -> CImage -> CStencil -> IO CImage
+advance' !n image stencil
+    | n <= 0  = return image
+    | otherwise = compute' image stencil >>= \img -> advance' (n-1) img stencil
+
+advance :: Int -> CImage -> IO CImage
+advance !n image
+    | n <= 0    = return image
+    | otherwise = compute image >>= \img -> advance (n - 1) img
+
+{--}
+buildIt :: Options -> IO (IO CImage, Maybe (CImage -> Integer -> IO ()))
+buildIt options = do
+    writeFile "2d-convolution.res" "" -- truncate output file
+    img <- getImage (imageOpt options)
+
+    case stencilOpt options of
+        FileStencil file -> do
+            stencil <- CStencil `fmap`  parseMatrixFromFile file
+            img `seq` return (runIt' img stencil, showIt $ extent img)
+
+        Default ->
+            img `seq` return (runIt img , showIt $ extent img)
+
     where
-        pArgs = case args of
-                 []                  -> Generate 1024 1024 4000
-                 [iterinput]         -> Generate 1024 1024 (read iterinput)
-                 [li, wi, iterinput] -> Generate (read li) (read wi) (read iterinput)
-                 [fp, iterinput] -> FromFile fp (read iterinput)
-                 _                   -> error "2d-convolution.builtIt"
+        num = iterationsOpt options
 
-        runIt :: Iterations -> CImage -> IO CImage
-        runIt = advance
+        runIt :: CImage -> IO CImage
+        runIt = advance num
 
-        image :: Args -> IO (CImage, Iterations)
-        image arg = case arg of
-            FromFile filename iter  ->
-                flip (,) iter `fmap` parseMatrixFromFile filename
+        runIt' :: CImage -> CStencil -> IO CImage
+        runIt' = advance' num
 
-            Generate height width iters -> do
-                let shape = (Z :. height :. width) :: DIM2
-                return (fromListUnboxed shape $ replicate (height * width) 1, iters)
+        getImage :: OptImage -> IO CImage
+        getImage (FileImage file)      = parseMatrixFromFile file
+        getImage (Extent width height) = computeP . Repa.fromFunction (Z:.height:.width) $ const 1
 
-        showIt :: Iterations -> DIM2 -> Maybe (CImage -> Integer -> IO ())
-        showIt iter (Z :. height :. width) =
-            Just (\k td -> do
-                print $ sumAllS k
-                appendFile "2d-convolution.time.res" $ intercalate "," [show numCapabilities, show height, show width, show iter, show td] Prelude.++ "\n"
-                writeFile "2d-convolution.res" . show $ sumAllS k
-            )       -- put checksum output in convolution.res
-
+        showIt :: DIM2 -> Maybe (CImage -> Integer -> IO ())
+        showIt (Z :. height :. width) =
+            Just foo
+            where
+              foo :: CImage -> Integer -> IO ()
+              foo k td = do
+                  appendFile "2d-convolution.time.res" $ intercalate "," [show numCapabilities, show height, show width, show num, show td] ++ "\n"
+                  appendFile "2d-convolution.res" $ show (sumAllS k) ++ "\n"
+--}
 main :: IO ()
-main = runBenchmark 1 buildIt
+main = runBenchmark 10 . buildIt =<< execOptionParser
 
 
 parseMatrixFromFile :: FilePath -> IO CImage

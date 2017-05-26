@@ -16,15 +16,13 @@
 
 module Harness (runBenchmark) where
 
-import           Control.Monad      (forM_)
+import           Control.Monad (forM_)
 import           Data.Time
-import           System.Environment
 
 {- # INLINE runBenchmark # -}
-runBenchmark :: Int -> ([String] -> IO (IO a, Maybe (a -> Integer -> IO ()))) -> IO ()
+runBenchmark :: Int -> IO (IO a, Maybe (a -> Integer -> IO ())) -> IO ()
 runBenchmark n buildIt = do
-    args <- getArgs
-    bench <- buildIt args
+    bench <- buildIt
 
     forM_ [1..n] $ \_ -> do
         t0 <- bench `seq` getCurrentTime
