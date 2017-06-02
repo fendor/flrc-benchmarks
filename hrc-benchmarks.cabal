@@ -29,7 +29,7 @@ executable 2d-convolution
                        -optlc-O2
                        -opta-O2
                        -msse2
-                       -O3
+                       -O2
                        -fno-liberate-case
                        -funfolding-use-threshold1000
                        -funfolding-keeness-factor1000
@@ -46,7 +46,7 @@ executable 2d-convolution-llvm
                        -optlc-O2
                        -opta-O2
                        -msse2
-                       -O3
+                       -O2
                        -fno-liberate-case
                        -funfolding-use-threshold1000
                        -funfolding-keeness-factor1000

@@ -42,7 +42,7 @@ defaultStencil =
         3
         3
         (\sh -> case sh of
-            (Z :. 0 :. 0)  -> Just 0.6
+            (Z :. 0 :. 0)  -> Just 0.5
             (Z :. 0 :. 1)  -> Just 0.125
             (Z :. 1 :. 0)  -> Just 0.125
             (Z :. -1 :. 0) -> Just 0.125
