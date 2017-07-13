@@ -17,6 +17,7 @@
 
 -- Ported from CnC/C++ program by Ryan Newton
 -- Modified for use with Repa and HRC by Leaf Petersen (2012)
+-- Refactored and further edited by Hannes Siebenhandl (2017)
 -}
 
 {-# LANGUAGE BangPatterns     #-}

@@ -59,8 +59,9 @@ executable nbody
   hs-source-dirs:      nbody
   ghc-options:         -Wall
                        -O2
-                       -optc-O2
+                       -optc-O3
                        -msse2
+                       -optc-march=skylake
                        -funfolding-use-threshold1000
                        -funfolding-keeness-factor1000
                        -threaded
@@ -72,11 +73,8 @@ executable nbody-llvm
   hs-source-dirs:      nbody
   ghc-options:         -Wall
                        -fllvm
-                       -optlo-O2
-                       -optlc-O2
-                       -opta-O2
-                       -msse2
                        -O2
+                       -optlc-march=skylake
                        -funfolding-use-threshold1000
                        -funfolding-keeness-factor1000
                        -threaded
