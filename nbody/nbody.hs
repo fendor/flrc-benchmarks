@@ -44,20 +44,16 @@ genVector :: (R.Shape sh, Fractional t) => sh -> sh -> (t, t, t)
 genVector sh tag = (tag' * 1.0, tag' * 0.2, tag' * 30.0)
    where tag' = fromIntegral (R.toIndex sh tag)
 
-{-# INLINE multTriple #-}
+--{-# INLINE multTriple #-}
 multTriple :: Double -> Float3D -> Float3D
 multTriple c (!x, !y, !z) = ( c*x,c*y,c*z )
 
-{-# INLINE sumTriples #-}
+--{-# INLINE sumTriples #-}
 sumTriples :: PVectorD -> Float3D
 sumTriples = R.foldAllS (\(!x,!y,!z) (!x',!y',!z') -> (x+x',y+y',z+z')) (0,0,0)
 
-run :: Monad m => Int -> Int -> m PVector
-run n iterations = do
-    vals <- R.computeUnboxedP (R.fromFunction d $ genVector d)
-    advance iterations vals
-  where
-    d = R.ix1 n
+run :: Monad m =>  Int -> PVector -> m PVector
+run = advance
 
 accel :: Float3D -> PVector -> Float3D
 accel vector vecList = multTriple gForce . sumTriples $ R.map (pairWiseAccel vector) vecList
@@ -95,25 +91,29 @@ step :: Monad m => PVector -> m PVector
 step accels = R.computeUnboxedP $ R.map (`accel` accels) accels
 
 buildIt :: Monad m => Options -> m (m PVector, Maybe (PVector -> Integer -> IO ()))
-buildIt options = return (runIt, showIt)
-  where
-    num = iterationsOpt options
-    planets = numberOfPlanetsOpt options
+buildIt options = do
+    let d = R.ix1 planets
+    vec <- R.computeUnboxedP (R.fromFunction d $ genVector d)
+    return (runIt vec, showIt)
+      where
+        num = iterationsOpt options
+        planets = numberOfPlanetsOpt options
 
-    runIt :: Monad m => m PVector
-    runIt = do
-      acc <- run planets num
-      acc `R.deepSeqArray` return acc
+        runIt :: Monad m => PVector -> m PVector
+        runIt vec = do
+          acc <- run planets vec
+          acc `R.deepSeqArray` return acc
 
-    showIt :: Maybe (PVector -> Integer -> IO ())
-    showIt =
-      let f r td =
-            let s = List.concat [ T.printf "(%f, %f, %f)\n" x y z | (x, y, z) <- R.toList r ]
-                line = intercalate "," [show numCapabilities, show planets, show num, show td]
-            in do
-              appendFile "nbody.time.res" (line ++ "\n")
-              writeFile "nbody.res" s
-      in Just f
+        showIt :: Maybe (PVector -> Integer -> IO ())
+        showIt =
+            let
+                f r td = do
+                    let line = intercalate "," [show numCapabilities, show planets, show num, show td]
+                    appendFile "nbody.time.res" (line ++ "\n")
+                    let s = List.concat [ T.printf "(%f, %f, %f)\n" x y z | (x, y, z) <- R.toList r ]
+                    writeFile "nbody.res" s
+            in
+                Just f
 
 main :: IO ()
 main = runBenchmark 10 . buildIt =<< execOptionParser

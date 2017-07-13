@@ -3,16 +3,16 @@
 
 name:                hrc-benchmarks
 version:             0.1.0.0
-synopsis:            Benchmarks for Intel Labs Haskell Research Compiler
+synopsis:            Benchmarks to examine the recentness of the Haskell Gap Paper
 homepage:            https://github.com/IntelLabs/flrc
 license:             OtherLicense
 license-file:        LICENSE
-author:              Paul H. Liu
-maintainer:          hai.liu@intel.com
+author:              Hannes Siebenhandl
+maintainer:          power.walross@gmail.com
 category:            Development
 build-type:          Simple
 -- extra-source-files:
-cabal-version:       >=1.10
+cabal-version:       >=1.24
 
 library
   hs-source-dirs:      src
@@ -74,7 +74,6 @@ executable nbody-llvm
   ghc-options:         -Wall
                        -fllvm
                        -O2
-                       -optlc-march=skylake
                        -funfolding-use-threshold1000
                        -funfolding-keeness-factor1000
                        -threaded
