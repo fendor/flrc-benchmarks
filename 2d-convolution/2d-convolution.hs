@@ -31,9 +31,8 @@ import           Harness
 type CImage = Array U DIM2 Double
 
 newtype CStencil =
-    CStencil
-      { getStencil :: Array U DIM2 Double
-      }
+    CStencil {-# UNPACK #-} (Array U DIM2 Double)
+
 
 
 defaultStencil :: Stencil DIM2 Double
@@ -51,19 +50,23 @@ defaultStencil =
         )
 
 compute :: CImage -> IO CImage
+{-# INLINE compute #-}
 compute image =
     computeP $ forStencil2 BoundClamp image defaultStencil
 
 compute' :: CImage -> CStencil -> IO CImage
-compute' img stencil =
-    convolveOutP outClamp (getStencil stencil) img
+{-# INLINE compute' #-}
+compute' img (CStencil stencil) =
+    convolveOutP outClamp stencil img
 
 advance' :: Int -> CImage -> CStencil -> IO CImage
+{-# INLINE advance' #-}
 advance' !n image stencil
     | n <= 0  = return image
     | otherwise = compute' image stencil >>= \img -> advance' (n-1) img stencil
 
 advance :: Int -> CImage -> IO CImage
+{-# INLINE advance #-}
 advance !n image
     | n <= 0    = return image
     | otherwise = compute image >>= \img -> advance (n - 1) img
