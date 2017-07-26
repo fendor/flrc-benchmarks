@@ -43,7 +43,7 @@ options =
             <> metavar "INT"
             )
         <*> option auto
-            ( short 'p'
+            ( short 's'
             <> long "planets"
             <> help "Number of planets to execute the nbody problem"
             <> showDefault

@@ -26,8 +26,7 @@ executable 2d-convolution
   hs-source-dirs:      2d-convolution
   ghc-options:         -Wall
                        -O2
-                       -- -fno-liberate-case
-                       -fforce-recomp
+                       -fno-liberate-case
                        -funfolding-use-threshold1000
                        -funfolding-keeness-factor1000
                        -threaded
@@ -42,10 +41,9 @@ executable 2d-convolution-llvm
                        -optlo-O2
                        -optlc-O2
                        -opta-O2
-                       -msse2
+                       -opta-march=native
                        -O2
-                       -- -fno-liberate-case
-                       -fforce-recomp
+                       -fno-liberate-case
                        -funfolding-use-threshold1000
                        -funfolding-keeness-factor1000
                        -threaded
@@ -71,6 +69,10 @@ executable nbody-llvm
   hs-source-dirs:      nbody
   ghc-options:         -Wall
                        -fllvm
+                       -optlo-O2
+                       -optlc-O2
+                       -opta-O2
+                       -opta-march=native
                        -O2
                        -funfolding-use-threshold1000
                        -funfolding-keeness-factor1000
