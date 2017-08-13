@@ -108,7 +108,7 @@ buildIt options = do
                   appendFile "2d-convolution.res" $ show (sumAllS k) ++ "\n"
 --}
 main :: IO ()
-main = runBenchmark 10 . buildIt =<< execOptionParser
+main = runBenchmark 1 . buildIt =<< execOptionParser
 
 
 parseMatrixFromFile :: FilePath -> IO CImage

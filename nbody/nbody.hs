@@ -52,11 +52,7 @@ sumTriples :: PVectorD -> Float3D
 {-# INLINE sumTriples #-}
 sumTriples = R.foldAllS (\(!x,!y,!z) (!x',!y',!z') -> (x+x',y+y',z+z')) (0,0,0)
 
-run :: Monad m =>  Int -> PVector -> m PVector
-run = advance
-
 accel :: Float3D -> PVector -> Float3D
-{-# INLINE accel #-}
 accel vector vecList = multTriple gForce . sumTriples $ R.map (pairWiseAccel vector) vecList
 
 pairWiseAccel :: Float3D -> Float3D -> Float3D
@@ -81,15 +77,6 @@ advance n accels =
       next <- step accels
       advance (n-1) next
 
-{--
-advance' :: Int -> PVector -> PVector
-advance' n accels = List.iterate step accels !! n
---}
-{--
-advance'' :: Int -> PVector -> PVector
-advance'' n accels = List.foldl' (\val _ -> step val) accels [1..n]
---}
-
 step :: Monad m => PVector -> m PVector
 {-# INLINE step #-}
 step accels = R.computeUnboxedP $ R.map (`accel` accels) accels
@@ -104,11 +91,13 @@ buildIt options = do
         planets = numberOfPlanetsOpt options
 
         runIt :: Monad m => PVector -> m PVector
+        {-# INLINE runIt #-}
         runIt vec = do
-          acc <- run planets vec
+          acc <- advance planets vec
           acc `R.deepSeqArray` return acc
 
         showIt :: Maybe (PVector -> Integer -> IO ())
+        {-# INLINE showIt #-}
         showIt =
             let
                 f r td = do
@@ -120,7 +109,7 @@ buildIt options = do
                 Just f
 
 main :: IO ()
-main = runBenchmark 10 . buildIt =<< execOptionParser
+main = runBenchmark 1 . buildIt =<< execOptionParser
 
 prettyPrint :: PVector -> IO ()
 prettyPrint = mapM_ print . R.toList

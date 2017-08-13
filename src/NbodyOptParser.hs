@@ -1,5 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-
 module NbodyOptParser
   ( Options
   , iterationsOpt
@@ -8,8 +6,7 @@ module NbodyOptParser
   )
   where
 
-import           ClassyPrelude
-import           Data.Semigroup      ((<>))
+import           Data.Monoid ((<>))
 import           Options.Applicative
 
 

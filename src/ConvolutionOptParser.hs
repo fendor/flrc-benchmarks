@@ -1,5 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-
 module ConvolutionOptParser
   (execOptionParser
   , Options
@@ -13,9 +11,8 @@ module ConvolutionOptParser
   , Iterations
   ) where
 
-import           ClassyPrelude
-import           Data.Semigroup      ((<>))
 import           Options.Applicative
+import           Data.Monoid ((<>))
 
 type Width = Int
 type Height = Int

@@ -16,7 +16,7 @@ cabal-version:       >=1.24
 
 library
   hs-source-dirs:      src
-  build-depends:       base, time, optparse-applicative, classy-prelude
+  build-depends:       base, time, optparse-applicative
   exposed-modules:     Harness, ConvolutionOptParser, NbodyOptParser
   default-language:    Haskell2010
 
@@ -30,6 +30,7 @@ executable 2d-convolution
                        -funfolding-use-threshold1000
                        -funfolding-keeness-factor1000
                        -threaded
+                       -opta-march=native
   default-language:    Haskell2010
 
 executable 2d-convolution-llvm
@@ -37,16 +38,19 @@ executable 2d-convolution-llvm
   build-depends:       base, repa, hrc-benchmarks, repa-algorithms
   hs-source-dirs:      2d-convolution
   ghc-options:         -Wall
-                       -fllvm
-                       -optlo-O2
-                       -optlc-O2
-                       -opta-O2
-                       -opta-march=native
+                       -Odph
                        -O2
+                       -rtsopts
+                       -threaded
+                       -msse2
+                       -optlc-O3
+                       -optlo-O3
                        -fno-liberate-case
                        -funfolding-use-threshold1000
                        -funfolding-keeness-factor1000
-                       -threaded
+                       -fllvm
+                       -opta-march=native
+                       --fforce-recomp
   default-language:    Haskell2010
 
 executable nbody
@@ -57,7 +61,7 @@ executable nbody
                        -O2
                        -optc-O3
                        -msse2
-                       -optc-march=skylake
+                       -optc-march=native
                        -funfolding-use-threshold1000
                        -funfolding-keeness-factor1000
                        -threaded
@@ -68,13 +72,15 @@ executable nbody-llvm
   build-depends:       base, repa, deepseq, hrc-benchmarks
   hs-source-dirs:      nbody
   ghc-options:         -Wall
-                       -fllvm
-                       -optlo-O2
-                       -optlc-O2
-                       -opta-O2
-                       -opta-march=native
+                       -rtsopts
                        -O2
+                       -Odph
+                       -fllvm
+                       -msse2
+                       -optlc-O3
+                       -optlo-O3
+                       --opta-march=native
                        -funfolding-use-threshold1000
                        -funfolding-keeness-factor1000
-                       -threaded
+                       -fforce-recomp
   default-language:    Haskell2010
