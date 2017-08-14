@@ -36,6 +36,7 @@ newtype CStencil =
 
 
 defaultStencil :: Stencil DIM2 Double
+{-# INLINE defaultStencil #-}
 defaultStencil =
     makeStencil2
         3
@@ -89,9 +90,11 @@ buildIt options = do
         num = iterationsOpt options
 
         runIt :: CImage -> IO CImage
+        {-# INLINE runIt #-}
         runIt = advance num
 
         runIt' :: CImage -> CStencil -> IO CImage
+        {-# INLINE runIt' #-}
         runIt' = advance' num
 
         getImage :: OptImage -> IO CImage
