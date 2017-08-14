@@ -3,7 +3,11 @@
 *.txt
 *~
 *.bak
+
+/.idea/
 # Created by https://www.gitignore.io/api/c,cmake,haskell
+
+
 
 ### C ###
 # Prerequisites

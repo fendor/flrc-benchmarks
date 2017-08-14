@@ -41,18 +41,20 @@ gForce = 9.8
 
 -- This step generates the bodies in the system.
 genVector :: (R.Shape sh, Fractional t) => sh -> sh -> (t, t, t)
+{-# INLINE genVector #-}
 genVector sh tag = (tag' * 1.0, tag' * 0.2, tag' * 30.0)
    where tag' = fromIntegral (R.toIndex sh tag)
 
 multTriple :: Double -> Float3D -> Float3D
 {-# INLINE multTriple #-}
-multTriple c (!x, !y, !z) = ( c*x,c*y,c*z )
+multTriple c (!x, !y, !z) = ( c*x, c*y, c*z )
 
 sumTriples :: PVectorD -> Float3D
 {-# INLINE sumTriples #-}
 sumTriples = R.foldAllS (\(!x,!y,!z) (!x',!y',!z') -> (x+x',y+y',z+z')) (0,0,0)
 
 accel :: Float3D -> PVector -> Float3D
+{-# INLINE accel #-}
 accel vector vecList = multTriple gForce . sumTriples $ R.map (pairWiseAccel vector) vecList
 
 pairWiseAccel :: Float3D -> Float3D -> Float3D
