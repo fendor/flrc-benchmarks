@@ -95,7 +95,7 @@ buildIt options = do
         runIt :: Monad m => PVector -> m PVector
         {-# INLINE runIt #-}
         runIt vec = do
-          acc <- advance planets vec
+          acc <- advance num vec
           acc `R.deepSeqArray` return acc
 
         showIt :: Maybe (PVector -> Integer -> IO ())
