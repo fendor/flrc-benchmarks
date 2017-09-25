@@ -7,7 +7,9 @@
 /.idea/
 # Created by https://www.gitignore.io/api/c,cmake,haskell
 
-./likwid/
+likwid/likwid*
+likwid/bench/
+likwid/ext
 
 ### C ###
 # Prerequisites
