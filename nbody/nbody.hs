@@ -111,7 +111,7 @@ buildIt options = do
                 Just f
 
 main :: IO ()
-main = runBenchmark 1 . buildIt =<< execOptionParser
+main = runBenchmark 10 . buildIt =<< execOptionParser
 
 prettyPrint :: PVector -> IO ()
 prettyPrint = mapM_ print . R.toList
