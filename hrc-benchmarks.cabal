@@ -17,7 +17,7 @@ cabal-version:       >=1.24
 library
   hs-source-dirs:      src
   build-depends:       base, time, optparse-applicative
-  exposed-modules:     Harness, ConvolutionOptParser, NbodyOptParser
+  exposed-modules:     Harness, ConvolutionOptParser, NbodyOptParser, Pcm
   default-language:    Haskell2010
 
 executable 2d-convolution
@@ -25,12 +25,14 @@ executable 2d-convolution
   build-depends:       base, repa, hrc-benchmarks, repa-algorithms
   hs-source-dirs:      2d-convolution
   ghc-options:         -Wall
+                       -rtsopts
                        -O2
                        -fno-liberate-case
                        -funfolding-use-threshold1000
                        -funfolding-keeness-factor1000
                        -threaded
                        -opta-march=native
+  extra-libraries:     likwid
   default-language:    Haskell2010
 
 executable 2d-convolution-llvm
@@ -50,6 +52,7 @@ executable 2d-convolution-llvm
                        -funfolding-keeness-factor1000
                        -fllvm
                        -opta-march=native
+  extra-libraries:     likwid
   default-language:    Haskell2010
 
 executable nbody
@@ -57,6 +60,7 @@ executable nbody
   build-depends:       base, repa, deepseq, hrc-benchmarks
   hs-source-dirs:      nbody
   ghc-options:         -Wall
+                       -rtsopts
                        -O2
                        -optc-O3
                        -msse2
@@ -64,6 +68,7 @@ executable nbody
                        -funfolding-use-threshold1000
                        -funfolding-keeness-factor1000
                        -threaded
+  extra-libraries:     likwid
   default-language:    Haskell2010
 
 executable nbody-llvm
@@ -81,5 +86,5 @@ executable nbody-llvm
                        -optlo-O3
                        -funfolding-use-threshold1000
                        -funfolding-keeness-factor1000
-                       -fforce-recomp
+  extra-libraries:     likwid
   default-language:    Haskell2010
