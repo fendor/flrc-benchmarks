@@ -33,8 +33,6 @@ type CImage = Array U DIM2 Double
 newtype CStencil =
     CStencil {-# UNPACK #-} (Array U DIM2 Double)
 
-
-
 defaultStencil :: Stencil DIM2 Double
 {-# INLINE defaultStencil #-}
 defaultStencil =
@@ -117,11 +115,11 @@ main = runBenchmark 10 . buildIt =<< execOptionParser
 parseMatrixFromFile :: FilePath -> IO CImage
 parseMatrixFromFile filename = do
     content <- lines `fmap` readFile filename
+
     case content of
       (sizes:values) -> do
           let [width, height] = (Prelude.map read . words) sizes
           let shape = Z :. height :. width :: DIM2
           return (fromListUnboxed shape $ concatMap (Prelude.map read . words) values)
-
 
       _ -> error "Couldn't parse file invalid number of lines "

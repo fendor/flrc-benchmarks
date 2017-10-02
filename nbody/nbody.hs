@@ -47,11 +47,11 @@ genVector sh tag = (tag' * 1.0, tag' * 0.2, tag' * 30.0)
 
 multTriple :: Double -> Float3D -> Float3D
 {-# INLINE multTriple #-}
-multTriple c (!x, !y, !z) = ( c*x, c*y, c*z )
+multTriple c (x, y, z) = ( c*x, c*y, c*z )
 
 sumTriples :: PVectorD -> Float3D
 {-# INLINE sumTriples #-}
-sumTriples = R.foldAllS (\(!x,!y,!z) (!x',!y',!z') -> (x+x',y+y',z+z')) (0,0,0)
+sumTriples = R.foldAllS (\(x,y,z) (x',y',z') -> (x+x',y+y',z+z')) (0,0,0)
 
 accel :: Float3D -> PVector -> Float3D
 {-# INLINE accel #-}
